@@ -3,12 +3,14 @@ from playwright.sync_api import sync_playwright
 
 app = Flask(__name__)
 
-NEXTDNS_URL = "https://my.nextdns.io/1165b4/setup"
+NEXTDNS = "https://my.nextdns.io/1165b4/setup"
 
 
 @app.route("/")
-def home():
+def index():
+
     try:
+
         with sync_playwright() as p:
 
             browser = p.chromium.launch(
@@ -22,75 +24,99 @@ def home():
             page = browser.new_page()
 
             page.goto(
-                NEXTDNS_URL,
+                NEXTDNS,
                 wait_until="networkidle",
                 timeout=60000
             )
 
-            # hintayin ang JavaScript render
+            # hintayin matapos ang javascript
             page.wait_for_timeout(8000)
 
-            text = page.locator("body").inner_text()
+            result = page.locator("body").inner_text()
 
             browser.close()
 
 
         return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <title>NextDNS Extractor</title>
+<!DOCTYPE html>
+<html>
 
-        <style>
-        body {{
-            background:#111;
-            color:#00ff88;
-            font-family:Arial;
-            padding:20px;
-        }}
+<head>
 
-        .box {{
-            background:#222;
-            padding:20px;
-            border-radius:10px;
-        }}
+<title>NextDNS Reader</title>
 
-        pre {{
-            white-space:pre-wrap;
-            font-size:16px;
-        }}
-        </style>
+<style>
 
-        </head>
+body {{
+    background:#0d1117;
+    color:white;
+    font-family:Arial;
+    padding:30px;
+}}
 
-        <body>
+.box {{
 
-        <div class="box">
+    background:#161b22;
+    border:1px solid #30363d;
+    border-radius:12px;
 
-        <h2>NextDNS Setup</h2>
+    padding:20px;
 
-        <pre>{text}</pre>
+    max-width:900px;
+    margin:auto;
 
-        </div>
+}}
 
-        </body>
-        </html>
-        """
+h2 {{
+    color:#00ff99;
+}}
+
+pre {{
+
+    white-space:pre-wrap;
+    font-size:16px;
+    line-height:1.5;
+
+}}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="box">
+
+<h2>
+NextDNS Setup Result
+</h2>
+
+
+<pre>
+{result}
+</pre>
+
+
+</div>
+
+</body>
+
+</html>
+"""
 
 
     except Exception as e:
 
         return f"""
-        <html>
-        <body>
         <h2>Error</h2>
         <pre>{e}</pre>
-        </body>
-        </html>
         """
 
 
+
 if __name__ == "__main__":
+
     app.run(
         host="0.0.0.0",
         port=5000
