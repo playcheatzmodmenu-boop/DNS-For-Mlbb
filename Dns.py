@@ -3,83 +3,163 @@ import secrets
 import string
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16) # Kailangan para sa session management
+app.secret_key = secrets.token_hex(16)
 
-# Pansamantalang lagayan ng mga generated keys (Sa memory muna natin ilagay)
-# Format: { "KEY-XXXX": True (Active) / False (Used) }
 DATABASE_KEYS = {
-    "ADMIN-MASTER-KEY": True # Default master key para masubukan mo agad
+    "ADMIN-MASTER-KEY": True
 }
+
+# ----------------- ADMIN LOGIN (Para sa Panel) -----------------
+@app.route("/panel-login", methods=["GET", "POST"])
+def panel_login():
+    error = ""
+    if request.method == "POST":
+        admin_pass = request.form.get("password", "")
+        if admin_pass == "slider123":
+            session['admin_logged'] = True
+            return redirect(url_for('admin_panel'))
+        else:
+            error = "Mali ang password ng panel!"
+
+    return render_template_string("""
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    background: #0d1117; 
+    color: white; 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+}
+.box { 
+    background: #161b22; 
+    border: 1px solid #30363d; 
+    border-radius: 16px; 
+    padding: 35px; 
+    width: 100%; 
+    max-width: 400px; 
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    text-align: center; 
+}
+h2 { color: #58a6ff; margin-bottom: 20px; font-size: 22px; }
+input { 
+    width: 100%; 
+    padding: 14px; 
+    background: #0d1117; 
+    border: 1px solid #30363d; 
+    border-radius: 8px; 
+    color: white; 
+    font-size: 16px; 
+    margin-bottom: 20px; 
+    text-align: center; 
+    outline: none;
+    transition: border 0.3s;
+}
+input:focus { border-color: #58a6ff; }
+button { 
+    background: #da3633; 
+    color: white; 
+    border: none; 
+    padding: 14px; 
+    border-radius: 8px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    width: 100%; 
+    font-size: 16px; 
+    transition: background 0.3s;
+}
+button:hover { background: #f85149; }
+.error { color: #ff5555; font-size: 14px; margin-bottom: 15px; background: rgba(255,85,85,0.1); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,85,85,0.3); }
+</style>
+</head>
+<body>
+<div class="box">
+    <h2>Admin Password</h2>
+    <form method="POST">
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <input type="password" name="password" placeholder="Ilagay ang password" required autocomplete="off">
+        <button type="submit">Pasok sa Panel</button>
+    </form>
+</div>
+</body>
+</html>
+""", error=error)
 
 # ----------------- ADMIN PANEL (Paggawa ng Key) -----------------
 @app.route("/panel", methods=["GET", "POST"])
 def admin_panel():
+    if not session.get('admin_logged'):
+        return redirect(url_for('panel_login'))
+
     msg = ""
-    new_key = ""
     if request.method == "POST":
-        # Gumawa ng random generated key (Halimbawa: DNS-A9X2-7B4K)
         chars = string.ascii_uppercase + string.digits
         key_part1 = ''.join(secrets.choice(chars) for _ in range(4))
         key_part2 = ''.join(secrets.choice(chars) for _ in range(4))
         new_key = f"DNS-{key_part1}-{key_part2}"
         
-        # I-save sa database keys na active
         DATABASE_KEYS[new_key] = True
-        msg = f"Successfully generated key: {new_key}"
+        msg = f"Generated: {new_key}"
 
     keys_list_html = ""
     for k, status in DATABASE_KEYS.items():
-        st_label = '<span style="color:#00ff99;">Active (Unused)</span>' if status else '<span style="color:#ff5555;">Used / Expired</span>'
-        keys_list_html += f"<li><b>{k}</b> - {st_label}</li>"
+        st_label = '<span style="color:#00ff99;">Active</span>' if status else '<span style="color:#ff5555;">Used</span>'
+        keys_list_html += f"<li style='margin-bottom: 8px;'><b>{k}</b> — {st_label}</li>"
 
     return render_template_string("""
 <!DOCTYPE html>
 <html>
 <head>
 <title>Admin Key Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { background:#0d1117; color:white; font-family:Arial, sans-serif; padding:30px; }
-.box { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:20px; max-width:600px; margin:auto; }
-h2 { color:#58a6ff; }
-button { background:#238636; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background:#0d1117; color:white; font-family:'Segoe UI', Arial, sans-serif; padding:20px; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+.box { background:#161b22; border:1px solid #30363d; border-radius:16px; padding:30px; width:100%; max-width:600px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+h2 { color:#58a6ff; margin-bottom: 20px; }
+button { background:#238636; color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width: 100%; font-size: 16px; transition: background 0.3s; }
 button:hover { background:#2ea043; }
-.key-box { background:#0d1117; padding:10px; border:1px solid #30363d; border-radius:6px; font-family:monospace; color:#00ff99; margin-top:10px; }
-ul { padding-left: 20px; line-height: 1.8; }
+.key-box { background:#0d1117; padding:12px; border:1px solid #30363d; border-radius:8px; font-family:monospace; color:#00ff99; margin-top:15px; font-size: 15px; text-align: center; }
+ul { padding-left: 20px; line-height: 1.6; margin-top: 10px; max-height: 250px; overflow-y: auto; }
 </style>
 </head>
 <body>
 <div class="box">
     <h2>Key Generator Panel</h2>
     <form method="POST">
-        <button type="submit">Generate New Key</button>
+        <button type="submit">+ Generate New Key</button>
     </form>
     {% if msg %}
         <div class="key-box">{{ msg }}</div>
     {% endif %}
     
-    <h3 style="color:#c9d1d9; margin-top:30px;">All Generated Keys:</h3>
+    <h3 style="color:#c9d1d9; margin-top:25px; font-size: 16px;">Generated Keys History:</h3>
     <ul>
         {{ keys_list_html | safe }}
     </ul>
-    <p style="font-size:12px; color:#8b949e; margin-top:20px;"><a href="/" style="color:#58a6ff;">Pumunta sa Login Page</a></p>
 </div>
 </body>
 </html>
 """, msg=msg, keys_list_html=keys_list_html)
 
-# ----------------- LOGIN PAGE (Gamit ang Key) -----------------
+# ----------------- LOGIN PAGE (Para sa mga Users - Bagong Disenyo at Center Aligned) -----------------
 @app.route("/", methods=["GET", "POST"])
 def login():
     error = ""
     if request.method == "POST":
         user_key = request.form.get("key", "").strip()
         
-        # Suriin kung valid at active pa ang key
         if user_key in DATABASE_KEYS and DATABASE_KEYS[user_key] == True:
-            # I-burn / i-disable agad ang key para 1-time use lang!
-            DATABASE_KEYS[user_key] = False
-            
-            # I-save sa session ng browser na logged in na sya
+            DATABASE_KEYS[user_key] = False # 1-time use only
             session['authorized_key'] = user_key
             return redirect(url_for('dns_dashboard'))
         else:
@@ -89,43 +169,112 @@ def login():
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login - DNS Access</title>
+<title>NextDNS - Secure Access</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { background:#0d1117; color:white; font-family:Arial, sans-serif; padding:50px; }
-.box { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:30px; max-width:400px; margin:auto; text-align:center; }
-input { width:90%; padding:12px; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:white; font-size:16px; margin-bottom:15px; text-align:center; }
-button { background:#1f6feb; color:white; border:none; padding:12px 20px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%; font-size:16px; }
-button:hover { background:#388bfd; }
-.error { color:#ff5555; font-size:14px; margin-bottom:15px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    background: #0d1117; 
+    color: white; 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+}
+.box { 
+    background: #161b22; 
+    border: 1px solid #30363d; 
+    border-radius: 16px; 
+    padding: 40px 30px; 
+    width: 90%; 
+    max-width: 420px; 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    text-align: center; 
+}
+.logo-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+h2 { 
+    color: #ffffff; 
+    font-size: 22px; 
+    margin-bottom: 8px; 
+}
+p.subtitle {
+    color: #8b949e;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+input { 
+    width: 100%; 
+    padding: 14px 16px; 
+    background: #0d1117; 
+    border: 1px solid #30363d; 
+    border-radius: 8px; 
+    color: #00ff99; 
+    font-size: 16px; 
+    font-family: monospace;
+    letter-spacing: 1px;
+    margin-bottom: 20px; 
+    text-align: center; 
+    outline: none;
+    transition: all 0.3s ease;
+}
+input:focus { 
+    border-color: #00ff99; 
+    box-shadow: 0 0 8px rgba(0, 255, 153, 0.2);
+}
+button { 
+    background: #1f6feb; 
+    color: white; 
+    border: none; 
+    padding: 14px; 
+    border-radius: 8px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    width: 100%; 
+    font-size: 16px; 
+    transition: background 0.3s, transform 0.1s;
+}
+button:hover { background: #388bfd; }
+button:active { transform: scale(0.98); }
+.error { 
+    color: #ff5555; 
+    font-size: 13px; 
+    background: rgba(255, 85, 85, 0.1); 
+    border: 1px solid rgba(255, 85, 85, 0.3); 
+    padding: 10px; 
+    border-radius: 6px; 
+    margin-bottom: 20px; 
+}
 </style>
 </head>
 <body>
 <div class="box">
+    <div class="logo-icon">🛡️</div>
     <h2>Enter Access Key</h2>
+    <p class="subtitle">Ilagay ang iyong key para makuha ang DNS setup</p>
     <form method="POST">
         {% if error %}
             <div class="error">{{ error }}</div>
         {% endif %}
-        <input type="text" name="key" placeholder="ILAGAY ANG KEY DITO" required autocomplete="off">
-        <button type="submit">Login</button>
+        <input type="text" name="key" placeholder="DNS-XXXX-XXXX" required autocomplete="off">
+        <button type="submit">Access DNS</button>
     </form>
-    <p style="font-size:12px; color:#8b949e; margin-top:20px;"><a href="/panel" style="color:#58a6ff;">Punta sa Admin Panel</a></p>
 </div>
 </body>
 </html>
 """, error=error)
 
-# ----------------- DNS DASHBOARD (Isang beses lang ma-a-access) -----------------
+# ----------------- DNS DASHBOARD (One-time view) -----------------
 @app.route("/dashboard")
 def dns_dashboard():
-    # Suriin kung galing sa matagumpay na login ang user
     if 'authorized_key' not in session:
         return redirect(url_for('login'))
     
-    # Alisin agad sa session pagka-load para kapag nag-refresh/ni-reload nya, bawal na!
     session.pop('authorized_key', None)
 
-    # Kunin ang IP ng device para sa profile mapping
     if request.headers.get('X-Forwarded-For'):
         user_ip = request.headers.get('X-Forwarded-For').split(',')[0].strip()
     else:
@@ -141,19 +290,22 @@ def dns_dashboard():
 <html>
 <head>
 <title>NextDNS Device Setup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { background:#0d1117; color:white; font-family:Arial, sans-serif; padding:30px; }
-.box { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:20px; max-width:650px; margin:auto; }
-.status-box { background: #0d1117; border: 1px solid #30363d; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #ff5555; font-weight: bold; }
-h2 { color:#58a6ff; margin-top: 0; }
-.label { font-size: 12px; color: #8b949e; text-transform: uppercase; font-weight: bold; margin-top: 15px; }
-.value { font-size: 15px; font-family: monospace; color: #c9d1d9; background: #0d1117; padding: 10px; border-radius: 6px; border: 1px solid #30363d; word-break: break-all; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background:#0d1117; color:white; font-family:'Segoe UI', Arial, sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px; }
+.box { background:#161b22; border:1px solid #30363d; border-radius:16px; padding:30px; width:100%; max-width:600px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+.status-box { background: rgba(255,85,85,0.1); border: 1px solid rgba(255,85,85,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #ff5555; font-size: 14px; line-height: 1.5; font-weight: bold; text-align: center; }
+h2 { color:#58a6ff; margin-bottom: 5px; font-size: 22px; }
+.label { font-size: 12px; color: #8b949e; text-transform: uppercase; font-weight: bold; margin-top: 15px; letter-spacing: 0.5px; }
+.value { font-size: 15px; font-family: monospace; color: #00ff99; background: #0d1117; padding: 12px; border-radius: 8px; border: 1px solid #30363d; word-break: break-all; margin-top: 5px; }
 </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>Device Setup (One-Time View)</h2>
+    <h2>Device Setup</h2>
+    <p style="color: #8b949e; font-size: 13px; margin-bottom: 20px;">One-Time Viewing Dashboard</p>
     
     <div class="status-box">
         ⚠️ PAALALA: Kapag nire-load o pinindot mo ang back button, mawawala na ang access na ito! Kopyahin mo na agad.
@@ -175,4 +327,3 @@ h2 { color:#58a6ff; margin-top: 0; }
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-        
