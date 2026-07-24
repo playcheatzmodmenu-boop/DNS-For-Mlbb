@@ -74,34 +74,4 @@ pre {{
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-    color:#00ff99;
-}}
-pre {{
-    white-space:pre-wrap;
-    font-size:16px;
-    line-height:1.5;
-}}
-</style>
-</head>
-
-<body>
-<div class="box">
-<h2>NextDNS Setup Result</h2>
-<pre>
-{result}
-</pre>
-</div>
-</body>
-
-</html>
-"""
-
-    except Exception as e:
-        return f"""
-        <h2>Error</h2>
-        <pre>{e}</pre>
-        """
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
     
