@@ -20,52 +20,49 @@ def index():
             page = browser.new_page()
             page.goto(NEXTDNS, wait_until="networkidle", timeout=60000)
             
-            # Hintayin mag-load ang mismong laman gamit ang JavaScript
             page.wait_for_timeout(5000)
             
             result = page.locator("body").inner_text()
             browser.close()
 
-        return f"""
-<!DOCTYPE html>
+        html_content = """<!DOCTYPE html>
 <html>
 <head>
 <title>NextDNS Reader</title>
 <style>
-body {{
+body {
     background:#0d1117;
     color:white;
     font-family:Arial;
     padding:30px;
-}}
-.box {{
+}
+.box {
     background:#161b22;
     border:1px solid #30363d;
     border-radius:12px;
     padding:20px;
     max-width:900px;
     margin:auto;
-}}
-h2 {{
+}
+h2 {
     color:#00ff99;
-}}
-pre {{
+}
+pre {
     white-space:pre-wrap;
     font-size:16px;
     line-height:1.5;
-}}
+}
 </style>
 </head>
 <body>
 <div class="box">
 <h2>NextDNS Setup Result</h2>
-<pre>
-{result}
-</pre>
+<pre>""" + result + """</pre>
 </div>
 </body>
-</html>
-"""
+</html>"""
+        return html_content
+
     except Exception as e:
         return f"""
         <h2>Error</h2>
