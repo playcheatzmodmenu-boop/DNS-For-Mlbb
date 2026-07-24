@@ -10,6 +10,7 @@ NEXTDNS_URL = "https://my.nextdns.io/1165b4/setup"
 def home():
     try:
         with sync_playwright() as p:
+
             browser = p.chromium.launch(
                 headless=True,
                 args=[
@@ -26,24 +27,71 @@ def home():
                 timeout=60000
             )
 
-            page.wait_for_timeout(5000)
+            # hintayin ang JavaScript render
+            page.wait_for_timeout(8000)
 
             text = page.locator("body").inner_text()
 
             browser.close()
 
+
         return f"""
+        <!DOCTYPE html>
         <html>
+        <head>
+        <title>NextDNS Extractor</title>
+
+        <style>
+        body {{
+            background:#111;
+            color:#00ff88;
+            font-family:Arial;
+            padding:20px;
+        }}
+
+        .box {{
+            background:#222;
+            padding:20px;
+            border-radius:10px;
+        }}
+
+        pre {{
+            white-space:pre-wrap;
+            font-size:16px;
+        }}
+        </style>
+
+        </head>
+
         <body>
-        <h2>NextDNS Result</h2>
+
+        <div class="box">
+
+        <h2>NextDNS Setup</h2>
+
         <pre>{text}</pre>
+
+        </div>
+
         </body>
         </html>
         """
 
+
     except Exception as e:
-        return f"<pre>{e}</pre>"
+
+        return f"""
+        <html>
+        <body>
+        <h2>Error</h2>
+        <pre>{e}</pre>
+        </body>
+        </html>
+        """
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(
+        host="0.0.0.0",
+        port=5000
+    )
