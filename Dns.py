@@ -1,7 +1,7 @@
 from flask import Flask
 from playwright.sync_api import sync_playwright
 
-app = Flask(name)
+app = Flask(__name__)
 
 NEXTDNS_URL = "https://my.nextdns.io/1165b4/setup"
 
@@ -26,47 +26,24 @@ def home():
                 timeout=60000
             )
 
-            # hintayin ang React/JS render
             page.wait_for_timeout(5000)
 
-            content = page.locator("body").inner_text()
+            text = page.locator("body").inner_text()
 
             browser.close()
 
         return f"""
-        <!DOCTYPE html>
         <html>
-        <head>
-        <title>NextDNS Extractor</title>
-        <style>
-        body {{
-            font-family: Arial;
-            background:#111;
-            color:#0f0;
-            padding:20px;
-        }}
-        pre {{
-            white-space:pre-wrap;
-        }}
-        </style>
-        </head>
-
         <body>
-        <h2>NextDNS Setup</h2>
-        <pre>{content}</pre>
+        <h2>NextDNS Result</h2>
+        <pre>{text}</pre>
         </body>
         </html>
         """
 
     except Exception as e:
-        return f"""
-        <h2>Error</h2>
-        <pre>{e}</pre>
-        """
+        return f"<pre>{e}</pre>"
 
 
-if name == "main":
-    app.run(
-        host="0.0.0.0",
-        port=5000
-    )
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
