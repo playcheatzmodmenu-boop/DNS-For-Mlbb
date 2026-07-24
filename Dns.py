@@ -9,7 +9,7 @@ DATABASE_KEYS = {
     "ADMIN-MASTER-KEY": True
 }
 
-# ----------------- ADMIN LOGIN (Para sa Panel) -----------------
+# ----------------- ADMIN LOGIN (For Panel) -----------------
 @app.route("/panel-login", methods=["GET", "POST"])
 def panel_login():
     error = ""
@@ -19,7 +19,7 @@ def panel_login():
             session['admin_logged'] = True
             return redirect(url_for('admin_panel'))
         else:
-            error = "Mali ang password ng panel!"
+            error = "Invalid panel password!"
 
     return render_template_string("""
 <!DOCTYPE html>
@@ -86,15 +86,15 @@ button:hover { background: #f85149; }
         {% if error %}
             <div class="error">{{ error }}</div>
         {% endif %}
-        <input type="password" name="password" placeholder="Ilagay ang password" required autocomplete="off">
-        <button type="submit">Pasok sa Panel</button>
+        <input type="password" name="password" placeholder="Enter password" required autocomplete="off">
+        <button type="submit">Access Panel</button>
     </form>
 </div>
 </body>
 </html>
 """, error=error)
 
-# ----------------- ADMIN PANEL (Paggawa ng Key) -----------------
+# ----------------- ADMIN PANEL (Key Generator) -----------------
 @app.route("/panel", methods=["GET", "POST"])
 def admin_panel():
     if not session.get('admin_logged'):
@@ -151,7 +151,7 @@ ul { padding-left: 20px; line-height: 1.6; margin-top: 10px; max-height: 250px; 
 </html>
 """, msg=msg, keys_list_html=keys_list_html)
 
-# ----------------- LOGIN PAGE (Para sa mga Users - Bagong Disenyo at Center Aligned) -----------------
+# ----------------- LOGIN PAGE (For Users) -----------------
 @app.route("/", methods=["GET", "POST"])
 def login():
     error = ""
@@ -163,7 +163,7 @@ def login():
             session['authorized_key'] = user_key
             return redirect(url_for('dns_dashboard'))
         else:
-            error = "Invalid key, expired na, o nagamit na!"
+            error = "Invalid key, already expired, or already used!"
 
     return render_template_string("""
 <!DOCTYPE html>
@@ -254,7 +254,7 @@ button:active { transform: scale(0.98); }
 <div class="box">
     <div class="logo-icon">🛡️</div>
     <h2>Enter Access Key</h2>
-    <p class="subtitle">Ilagay ang iyong key para makuha ang DNS setup</p>
+    <p class="subtitle">Please enter your key to get the DNS setup</p>
     <form method="POST">
         {% if error %}
             <div class="error">{{ error }}</div>
@@ -308,7 +308,7 @@ h2 { color:#58a6ff; margin-bottom: 5px; font-size: 22px; }
     <p style="color: #8b949e; font-size: 13px; margin-bottom: 20px;">One-Time Viewing Dashboard</p>
     
     <div class="status-box">
-        ⚠️ PAALALA: Kapag nire-load o pinindot mo ang back button, mawawala na ang access na ito! Kopyahin mo na agad.
+        ⚠️ WARNING: If you reload or press the back button, this access will be gone! Copy it immediately.
     </div>
 
     <div class="label">Generated Profile ID</div>
