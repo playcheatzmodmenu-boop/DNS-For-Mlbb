@@ -304,8 +304,8 @@ h2 { color:#58a6ff; margin-bottom: 5px; font-size: 22px; }
 <body>
 
 <div class="box">
-    <h2>Device Setup</h2>
-    <p style="color: #8b949e; font-size: 13px; margin-bottom: 20px;">One-Time Viewing Dashboard</p>
+    <h2>Private Dns Protection</h2>
+    <p style="color: #8b949e; font-size: 13px; margin-bottom: 20px;">ViP Access Only</p>
     
     <div class="status-box">
         ⚠️ WARNING: If you reload or press the back button, this access will be gone! Copy it immediately.
