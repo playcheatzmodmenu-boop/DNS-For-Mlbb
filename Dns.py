@@ -1,6 +1,8 @@
 from flask import Flask, request, render_template_string, redirect, url_for, session
 import secrets
 import string
+import socket
+import time
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
@@ -8,6 +10,53 @@ app.secret_key = secrets.token_hex(16)
 DATABASE_KEYS = {
     "ADMIN-MASTER-KEY": True
 }
+
+# Listahan ng 3 NextDNS configurations na pagpipilian
+DNS_POOL = [
+    {
+        "profile_id": "5717aa",
+        "dot_quic": "5717aa.dns.nextdns.io",
+        "doh_url": "https://dns.nextdns.io/5717aa"
+    },
+    {
+        "profile_id": "5bf32b",
+        "dot_quic": "5bf32b.dns.nextdns.io",
+        "doh_url": "https://dns.nextdns.io/5bf32b"
+    },
+    {
+        "profile_id": "6c527e",
+        "dot_quic": "6c527e.dns.nextdns.io",
+        "doh_url": "https://dns.nextdns.io/6c527e"
+    }
+]
+
+def get_fastest_dns():
+    best_dns = DNS_POOL[0]
+    lowest_ping = float('inf')
+
+    for dns in DNS_POOL:
+        total_time = 0
+        success_count = 0
+        # Susubukan natin mag-connect nang 2 beses para makuha ang average ping
+        for _ in range(2):
+            try:
+                start_time = time.time()
+                # Port 443 para sa DoT/HTTPS check
+                sock = socket.create_connection((dns["dot_quic"], 443), timeout=1.5)
+                sock.close()
+                latency = (time.time() - start_time) * 1000 # convert to ms
+                total_time += latency
+                success_count += 1
+            except Exception:
+                pass
+        
+        if success_count > 0:
+            avg_ping = total_time / success_count
+            if avg_ping < lowest_ping:
+                lowest_ping = avg_ping
+                best_dns = dns
+        
+    return best_dns
 
 # ----------------- ADMIN LOGIN (For Panel) -----------------
 @app.route("/panel-login", methods=["GET", "POST"])
@@ -280,10 +329,11 @@ def dns_dashboard():
     else:
         user_ip = request.remote_addr
 
-    device_id = abs(hash(user_ip)) % 1000000
-    profile_id = f"d{device_id:06x}"
-    dot_quic = f"{profile_id}.dns.nextdns.io"
-    doh_url = f"https://dns.nextdns.io/{profile_id}"
+    # Piliin ang pinakamabilis na DNS base sa ping test para sa user na ito
+    fastest = get_fastest_dns()
+    profile_id = fastest["profile_id"]
+    dot_quic = fastest["dot_quic"]
+    doh_url = fastest["doh_url"]
 
     return render_template_string("""
 <!DOCTYPE html>
@@ -305,7 +355,7 @@ h2 { color:#58a6ff; margin-bottom: 5px; font-size: 22px; }
 
 <div class="box">
     <h2>Private Dns Protection</h2>
-    <p style="color: #8b949e; font-size: 13px; margin-bottom: 20px;">ViP Access Only</p>
+    <p style="color: #8b949e; font-size: 13px; margin-bottom: 20px;">ViP Access Only (Optimized Lowest Ping)</p>
     
     <div class="status-box">
         ⚠️ WARNING: If you reload or press the back button, this access will be gone! Copy it immediately.
